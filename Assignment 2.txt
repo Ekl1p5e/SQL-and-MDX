@@ -1,0 +1,123 @@
+1.
+SELECT Tb_Supplier.Name AS Supplier_Name,
+ Tb_Consumer.Name AS Consumer_Name,
+ Tb_Product.Name AS Product_Name,
+ Tb_Transactions.Quantity,
+ Tb_Transactions.Price
+FROM Tb_Supplier, Tb_Transactions, Tb_Consumer, Tb_Product
+WHERE Tb_Supplier.City = 'MADISON'
+ AND Tb_Consumer.City = 'Stevens Point'
+ AND Tb_Transactions.Price > 10000
+ AND Tb_Supplier.Supp_ID = Tb_Transactions.Supp_ID
+ AND Tb_Transactions.Con_ID = Tb_Consumer.Con_ID
+ AND Tb_Transactions.Prod_ID = Tb_Product.Prod_ID;
+
+2.
+SELECT Tb_Supplier.Name
+FROM Tb_Supplier, Tb_Offers AS OFF1,
+ Tb_Product AS PROD1,
+ Tb_Offers AS OFF2,
+ Tb_Product AS PROD2
+WHERE Tb_Supplier.Supp_ID = OFF1.Supp_ID
+ AND Tb_Supplier.Supp_ID = OFF2.Supp_ID
+ AND OFF1.Prod_ID = PROD1.Prod_ID
+ AND OFF2.Prod_ID = PROD2.Prod_ID
+ AND PROD1.Name = 'ORANGE'
+ AND PROD2.Name = 'COMPUTER'
+GROUP BY Tb_Supplier.Name;
+
+3.
+SELECT Tb_Supplier.Name
+FROM Tb_Supplier, Tb_Offers, Tb_Product
+WHERE Tb_Supplier.Supp_ID = Tb_Offers.Supp_ID
+ AND Tb_Offers.Prod_ID = Tb_Product.Prod_ID
+ AND (Tb_Product.Name = 'ORANGE'
+  OR Tb_Product.Name = 'COMPUTER'
+  OR Tb_Supplier.City = 'WAUSAU')
+GROUP BY Tb_Supplier.Name;
+
+4.
+SELECT Tb_Supplier.Name
+FROM Tb_Supplier,
+ Tb_Offers AS OFF1,
+ Tb_Product AS PROD1,
+ Tb_Offers AS OFF2,
+ Tb_Product AS PROD2,
+ Tb_Offers AS OFF3,
+ Tb_Product AS PROD3
+WHERE Tb_Supplier.Supp_ID = OFF1.Supp_ID
+ AND Tb_Supplier.Supp_ID = OFF2.Supp_ID
+ AND Tb_Supplier.Supp_ID = OFF3.Supp_ID
+ AND OFF1.Prod_ID = PROD1.Prod_ID
+ AND OFF2.Prod_ID = PROD2.Prod_ID
+ AND OFF3.Prod_ID = PROD3.Prod_ID
+ AND PROD1.Name = 'ORANGE'
+ AND PROD2.Name = 'COMPUTER'
+ AND PROD3.Name = 'AUTO'
+GROUP BY Tb_Supplier.Name;
+
+5.
+SELECT Tb_Product.Name
+FROM Tb_Supplier, Tb_Offers, Tb_Product
+WHERE Tb_Supplier.Supp_ID = Tb_Offers.Supp_ID
+ AND Tb_Offers.Prod_ID = Tb_Product.Prod_ID
+ AND Tb_Supplier.City <> 'CHICAGO'
+GROUP BY Tb_Product.Name;
+
+6.
+SELECT Tb_Consumer.Name
+FROM Tb_Consumer, Tb_Product, Tb_Requests
+WHERE Tb_Consumer.Con_ID = Tb_Requests.Con_ID
+ AND Tb_Product.Prod_ID = Tb_Requests.Prod_ID
+ AND Tb_Product.Name = 'COMPUTER'
+GROUP BY Tb_Consumer.Name
+EXCEPT
+SELECT Tb_Consumer.Name
+FROM Tb_Consumer, Tb_Product, Tb_Requests
+WHERE Tb_Consumer.Con_ID = Tb_Requests.Con_ID
+ AND Tb_Product.Prod_ID = Tb_Requests.Prod_ID
+ AND Tb_Product.Name <> 'COMPUTER'
+GROUP BY Tb_Consumer.Name;
+
+7.
+SELECT Tb_Product.Name
+FROM Tb_Consumer, Tb_Requests, Tb_Product
+WHERE Tb_Consumer.Con_ID = Tb_Requests.Con_ID
+ AND Tb_Product.Prod_ID = Tb_Requests.Prod_ID
+GROUP BY Tb_Product.Name
+ HAVING COUNT(*) = (SELECT COUNT(*) FROM Tb_Consumer);
+
+8.
+SELECT Tb_Product.Name
+FROM Tb_Transactions, Tb_Supplier, Tb_Product
+WHERE Tb_Transactions.Supp_ID = Tb_Supplier.Supp_ID
+ AND Tb_Transactions.Prod_ID = Tb_Product.Prod_ID
+ AND Tb_Product.Name NOT IN (SELECT Tb_Product.Name
+				FROM Tb_Transactions, Tb_Supplier, Tb_Product
+				WHERE Tb_Transactions.Supp_ID = Tb_Supplier.Supp_ID
+				 AND Tb_Transactions.Prod_ID = Tb_Product.Prod_ID
+				 AND Tb_Supplier.City = 'STEVENS POINT')
+GROUP BY Tb_Product.Name;
+
+9.
+SELECT TOP 1 Tb_Product.Name, Tb_Supplier.Name
+FROM Tb_Offers, Tb_Supplier, Tb_Product
+WHERE Tb_Offers.Supp_ID = Tb_Supplier.Supp_ID
+ AND Tb_Offers.Prod_ID = Tb_Product.Prod_ID
+ORDER BY Tb_Offers.Quantity DESC;
+
+10.
+SELECT Max_Table1.Name, City
+FROM (SELECT Tb_Product.Name, Tb_Supplier.City, SUM(Tb_Transactions.Quantity) AS Total_Qty
+		FROM Tb_Product, Tb_Supplier, Tb_Transactions
+		WHERE Tb_Transactions.Prod_ID = Tb_Product.Prod_ID
+		 AND Tb_Transactions.Supp_ID = Tb_Supplier.Supp_ID
+		GROUP BY Tb_Product.Name, Tb_Supplier.City) AS Max_Table1
+ INNER JOIN
+ (SELECT Name, MAX(Total_Qty) AS Quantity
+	FROM (SELECT Tb_Product.Name, Tb_Supplier.City, SUM(Tb_Transactions.Quantity) AS Total_Qty
+			FROM Tb_Product, Tb_Supplier, Tb_Transactions
+			WHERE Tb_Transactions.Prod_ID = Tb_Product.Prod_ID
+				AND Tb_Transactions.Supp_ID = Tb_Supplier.Supp_ID
+			GROUP BY Tb_Product.Name, Tb_Supplier.City) AS Max_Table
+	GROUP BY Name) AS Max_Table2 ON Max_Table1.Name = Max_Table2.Name AND Max_Table1.Total_Qty = Max_Table2.Quantity;

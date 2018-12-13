@@ -1,0 +1,151 @@
+--Cube
+SELECT DISTINCT S.Name "Supplier Name",
+		S.City "Supplier City",
+		S.State "Supplier State",
+		C.Name "Consumer Name",
+		C.City "Consumer City",
+		C.State "Consumer State",
+		P.Name "Product Name",
+		SUM(Quantity) "Total Transactions Quantity",
+		COUNT(Tran_ID) "Number of Transactions"
+INTO Tb_Transactions_Cube
+FROM Tb_Supplier S, Tb_Consumer C, Tb_Product P, Tb_Transactions T
+WHERE S.Supp_ID = T.Supp_ID AND C.Con_ID = T.Con_ID AND P.Prod_ID = T.Prod_ID
+GROUP BY CUBE((S.State, S.City, S.Name), (C.State, C.City, C.Name), P.Name),
+ROLLUP(S.State, S.City, S.Name),
+ROLLUP(C.State, C.City, C.Name);
+
+--1 Aggregates by combinations of supplier name and product name?
+SELECT [Supplier Name], "Product Name"
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NOT NULL
+ AND "Supplier City" IS NOT NULL
+ AND "Supplier State" IS NOT NULL
+ AND "Consumer Name" IS NULL
+ AND "Consumer City" IS NULL
+ AND "Consumer State" IS NULL
+ AND "Product Name" IS NOT NULL;
+
+--2 Aggregates by supplier states
+SELECT *
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" IS NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NULL
+  	AND "Consumer State" IS NULL
+  	AND "Product Name" IS NULL;
+
+--3 Number of transactions between supplier-city-consumer-city pairs
+SELECT [Supplier City], [Consumer City], [Number of Transactions]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NOT NULL
+  	AND "Consumer State" IS NOT NULL
+  	AND "Product Name" IS NULL;
+
+--4 Name of each product sold by suppliers in Wisconsin and quantity of sales for the product
+SELECT "Product Name", [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NOT NULL
+  	AND "Consumer State" = 'Wisconsin'
+  	AND "Product Name" IS NOT NULL;
+
+--5 Quantity of sales aggregated by product and supplier state
+SELECT "Product Name", [Supplier State], [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" IS NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NULL
+  	AND "Consumer State" IS NULL
+  	AND "Product Name" IS NOT NULL;
+
+--6 Quantity of computer sales aggregated by suppliers in Wisconsin
+SELECT "Supplier Name", [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NOT NULL
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" = 'Wisconsin'
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NULL
+  	AND "Consumer State" IS NULL
+  	AND "Product Name" = 'Computer';
+
+--7 Quantity of auto sales by each supplier from Wisconsin to consumers in Illinois
+SELECT "Supplier Name", [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NOT NULL
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" = 'Wisconsin'
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NULL
+  	AND "Consumer State" = 'Illinois'
+  	AND "Product Name" = 'Auto';
+
+--8 Quantity of auto sales by each supplier in Madison to consumers in Illinois
+SELECT "Supplier Name", [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NOT NULL
+ 	AND "Supplier City" = 'Madison'
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" IS NULL
+  	AND "Consumer State" = 'Illinois'
+  	AND "Product Name" = 'Auto';
+
+--9 Quantity of each product sold by supplier Bernstein to consumers in Chicago
+SELECT "Product Name", [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" = 'Bernstein'
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" = 'Chicago'
+  	AND "Consumer State" IS NOT NULL
+  	AND "Product Name" IS NOT NULL;
+
+--10 Quantity of milk sold by supplier Bernstein to consumers in Chicago
+SELECT [Total Transactions Quantity]
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" = 'Bernstein'
+ 	AND "Supplier City" IS NOT NULL
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" = 'Chicago'
+  	AND "Consumer State" IS NOT NULL
+  	AND "Product Name" = 'Milk';
+
+--11 (Extra Credit) For each product, list
+-- quantity sold by suppliers in Madison to consumers in Chicago versus
+-- quantity sold by suppliers in Chicago to consumers in Madison
+-- (result columns will be: product name, quantity Madison_Chicago, quantity Chicago_Madison
+SELECT MadChiTable.[Product Name], ISNULL("Quantity Madison_Chicago", 0) AS "Quantity Madison_Chicago", ISNULL("Quantity Chicago_Madison", 0) AS "Quantity Chicago_Madison"
+FROM(
+SELECT "Product Name", [Total Transactions Quantity] AS "Quantity Madison_Chicago"
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" = 'Madison'
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" = 'Chicago'
+  	AND "Consumer State" IS NOT NULL
+  	AND "Product Name" IS NOT NULL) AS MadChiTable FULL OUTER JOIN (
+SELECT "Product Name", [Total Transactions Quantity] AS "Quantity Chicago_Madison"
+FROM Tb_Transactions_Cube
+WHERE "Supplier Name" IS NULL
+ 	AND "Supplier City" = 'Chicago'
+  	AND "Supplier State" IS NOT NULL
+  	AND "Consumer Name" IS NULL
+  	AND "Consumer City" = 'Madison'
+  	AND "Consumer State" IS NOT NULL
+  	AND "Product Name" IS NOT NULL) AS ChiMadTable ON MadChiTable.[Product Name] = ChiMadTable.[Product Name];

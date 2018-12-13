@@ -1,0 +1,73 @@
+1.
+SELECT
+ NON EMPTY { [Measures].[Tb Transactions Count], [Measures].[Quantity - Tb Transactions], [Measures].[Price - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Product].[Name].[Name].ALLMEMBERS * [Tb Supplier].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+
+2.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions], [Measures].[Tb Transactions Count], [Measures].[Price - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Supplier].[State].[State].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+
+3.
+SELECT
+ NON EMPTY { [Measures].[Tb Transactions Count] } ON COLUMNS,
+ NON EMPTY { ([Tb Supplier].[City].[City].ALLMEMBERS * [Tb Consumer].[City].[City].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+
+4.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Product].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+WHERE ( [Tb Supplier].[State].&[Wisconsin] )
+
+5.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Product].[Name].[Name].ALLMEMBERS * [Tb Supplier].[State].[State].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+
+6.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Supplier].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+WHERE ( [Tb Product].[Name].&[Computer], [Tb Supplier].[State].&[Wisconsin] )
+
+7.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Supplier].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+WHERE ( [Tb Supplier].[State].&[Wisconsin], [Tb Consumer].[State].&[Illinois] )
+
+8.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Supplier].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+WHERE ( [Tb Consumer].[State].&[Illinois], [Tb Supplier].[City].&[Madison] )
+
+9.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS,
+ NON EMPTY { ([Tb Product].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
+WHERE ( [Tb Supplier].[Name].&[Bernstein], [Tb Consumer].[City].&[Chicago] )
+
+10.
+SELECT
+ NON EMPTY { [Measures].[Quantity - Tb Transactions] } ON COLUMNS
+FROM [DS715]
+WHERE ( [Tb Product].[Name].&[Milk], [Tb Supplier].[Name].&[Bernstein], [Tb Consumer].[City].&[Chicago] )
+
+11.
+WITH
+ MEMBER [Measures].[Quantity Chicago_Madison] AS ([Tb Supplier].[City].&[Chicago], [Tb Consumer].[City].&[Madison], [Measures].[Quantity - Tb Transactions])
+ MEMBER [Measures].[Quantity Madison_Chicago] AS ([Tb Supplier].[City].&[Madison], [Tb Consumer].[City].&[Chicago], [Measures].[Quantity - Tb Transactions])
+SELECT
+{ [Measures].[Quantity Chicago_Madison], [Measures].[Quantity Madison_Chicago] } ON COLUMNS,
+NON EMPTY { ([Tb Product].[Name].[Name].ALLMEMBERS ) } ON ROWS
+FROM [DS715]
